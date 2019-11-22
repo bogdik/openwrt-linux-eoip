@@ -33,7 +33,34 @@ service_triggers () {
 start_service() {
 	config_load "eoip"
 	echo "" > /etc/eoip.cfg
+        echo "#!/bin/sh" > /etc/afterStart.sh
+        echo "chkCount=0">> /etc/afterStart.sh
+        echo "while [ \$chkCount -le 10 ];do">> /etc/afterStart.sh
+        echo "  chkStarted=\$(ip a | grep zeoip | wc -l)">> /etc/afterStart.sh
+        echo "  if [ \$chkStarted -eq 0 ]; then">> /etc/afterStart.sh
+        echo "          chkCount=\$((chkCount+1))">> /etc/afterStart.sh
+        echo "          sleep 2">> /etc/afterStart.sh
+        echo "  else">> /etc/afterStart.sh
+        echo "          chkCount=11">> /etc/afterStart.sh
+        echo "  fi">> /etc/afterStart.sh
+        echo "done">> /etc/afterStart.sh
+        echo "now=\$(ip a | grep \"@zeoip\" | awk '{print \$2}' | sed 's/.$//' | cut -d \"@\" -f 1)" >> /etc/afterStart.sh
+        echo "IFS=\$'\n'" >> /etc/afterStart.sh
+        echo "for s in \$now ; do" >> /etc/afterStart.sh
+        echo "   ip link delete link dev \$s" >> /etc/afterStart.sh
+        echo "done" >> /etc/afterStart.sh
+	echo "rm /etc/afterStart.sh" >> /etc/afterStart.sh
+        chmod +x /etc/afterStart.sh
 	config_foreach start_eoip eoip
+	config_foreach start_eoip_vlan eoip
+	if [ "$(cat /etc/eoip.cfg | grep zeoip)" != '' ]; then
+		/etc/afterStart.sh&
+		procd_open_instance
+		args=" /etc/eoip.cfg"
+		procd_set_param command /usr/bin/eoip $args
+		procd_close_instance
+	fi
+
 }
 
 stop_service() {
@@ -63,10 +90,16 @@ start_eoip() {
                         fi 
 		fi
 	fi
-	if [ "$(cat /etc/eoip.cfg | grep zeoip)" != '' ]; then
-		procd_open_instance
-		args=" /etc/eoip.cfg"
-		procd_set_param command /usr/bin/eoip $args
-		procd_close_instance
-	fi
+}
+
+start_eoip_vlan() {
+	local section="$1" runas_root
+	config_get name "$section" name
+	config_list_foreach "$section" vlan handle_vlan ${name}
+}
+
+handle_vlan() {
+	local value="$1"
+	local name="$2"
+	echo "ip link add link zeoip${name} name zeoip${name}.${value} type vlan id ${value}" >> /etc/afterStart.sh
 }

@@ -59,6 +59,8 @@ start_service() {
 		args=" /etc/eoip.cfg"
 		procd_set_param command /usr/bin/eoip $args
 		procd_close_instance
+	else
+		rm /etc/afterStart.sh
 	fi
 
 }

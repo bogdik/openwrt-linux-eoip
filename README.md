@@ -1,4 +1,4 @@
-You may use this on main branch! (Network>VPN>EoIP
+You may use this on main branch! (Network>VPN>EoIP)
 ----------
 
 OpenWRT Package to compiler Ethernet Over IP (v0.5), is compatible with Mikrotik.

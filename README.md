@@ -1,4 +1,4 @@
-Linux-EOIP
+You may use this on main branch!
 ----------
 
 OpenWRT Package to compiler Ethernet Over IP (v0.5), is compatible with Mikrotik.
